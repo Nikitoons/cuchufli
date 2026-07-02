@@ -1,0 +1,609 @@
+<!DOCTYPE html>
+<html lang="es" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cuchuflí Pro - Control de Costos y Ganancias</title>
+    <!-- Google Fonts: Outfit (Rounded, premium, modern look) -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <header class="app-header">
+        <div class="header-logo">
+            <div class="logo-icon">
+                <!-- Inline SVG of a sweet wafer/candy -->
+                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="4" y1="20" x2="20" y2="4"></line>
+                    <line x1="8" y1="20" x2="20" y2="8"></line>
+                    <line x1="4" y1="16" x2="16" y2="4"></line>
+                    <circle cx="12" cy="12" r="10" stroke-dasharray="4 4" opacity="0.3"></circle>
+                </svg>
+            </div>
+            <div class="logo-text">
+                <h1>Cuchuflí<span>Pro</span></h1>
+                <p>Calculadora de costos y contabilidad</p>
+            </div>
+        </div>
+        
+        <div class="header-actions">
+            <!-- Theme Toggle -->
+            <button id="theme-toggle" class="btn-icon" aria-label="Cambiar tema">
+                <svg class="sun-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="12" cy="12" r="5"></circle>
+                    <line x1="12" y1="1" x2="12" y2="3"></line>
+                    <line x1="12" y1="21" x2="12" y2="23"></line>
+                    <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+                    <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+                    <line x1="1" y1="12" x2="3" y2="12"></line>
+                    <line x1="21" y1="12" x2="23" y2="12"></line>
+                    <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+                    <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+                </svg>
+                <svg class="moon-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display: none;">
+                    <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+                </svg>
+            </button>
+        </div>
+    </header>
+
+    <!-- Navigation Tabs -->
+    <nav class="app-nav">
+        <ul>
+            <li>
+                <button class="nav-tab active" data-tab="dashboard">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="9"></rect><rect x="14" y="3" width="7" height="5"></rect><rect x="14" y="12" width="7" height="9"></rect><rect x="3" y="16" width="7" height="5"></rect></svg>
+                    <span>Resumen</span>
+                </button>
+            </li>
+            <li>
+                <button class="nav-tab" data-tab="inventory">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.21 15.89A10 10 0 1 1 8 2.83"></path><path d="M22 12A10 10 0 0 0 12 2v10z"></path></svg>
+                    <span>Ingredientes</span>
+                </button>
+            </li>
+            <li>
+                <button class="nav-tab" data-tab="calculator">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="2" width="16" height="20" rx="2" ry="2"></rect><line x1="9" y1="22" x2="9" y2="16"></line><line x1="15" y1="22" x2="15" y2="16"></line><line x1="9" y1="16" x2="15" y2="16"></line><path d="M16 8h-4v4h4V8z"></path><path d="M8 8H6v2h2V8z"></path><path d="M8 12H6v2h2v-2z"></path></svg>
+                    <span>Calculadora Lotes</span>
+                </button>
+            </li>
+            <li>
+                <button class="nav-tab" data-tab="transactions">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"></line><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path></svg>
+                    <span>Ventas y Gastos</span>
+                </button>
+            </li>
+        </ul>
+    </nav>
+
+    <main class="app-container">
+        <!-- 1. RESUMEN TAB -->
+        <section id="tab-dashboard" class="tab-content active">
+            <div class="section-header">
+                <h2>Panel General</h2>
+                <p>Estadísticas clave de tu producción y ventas.</p>
+            </div>
+
+            <!-- KPI Cards -->
+            <div class="kpi-grid">
+                <div class="card kpi-card revenue">
+                    <div class="kpi-icon">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"></line><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path></svg>
+                    </div>
+                    <div class="kpi-info">
+                        <span class="kpi-label">Ventas Totales</span>
+                        <h3 id="kpi-revenue" class="kpi-value">$0</h3>
+                        <span class="kpi-trend positive" id="kpi-sales-count">0 transacciones</span>
+                    </div>
+                </div>
+
+                <div class="card kpi-card expenses">
+                    <div class="kpi-icon">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
+                    </div>
+                    <div class="kpi-info">
+                        <span class="kpi-label">Costos Totales</span>
+                        <h3 id="kpi-expenses" class="kpi-value">$0</h3>
+                        <span class="kpi-trend negative" id="kpi-expenses-info">Ingredientes + Extras</span>
+                    </div>
+                </div>
+
+                <div class="card kpi-card profit">
+                    <div class="kpi-icon">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
+                    </div>
+                    <div class="kpi-info">
+                        <span class="kpi-label">Ganancia Neta</span>
+                        <h3 id="kpi-profit" class="kpi-value">$0</h3>
+                        <span class="kpi-trend" id="kpi-profit-status">¡Excelente!</span>
+                    </div>
+                </div>
+
+                <div class="card kpi-card margin">
+                    <div class="kpi-icon">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"></line><line x1="12" y1="20" x2="12" y2="4"></line><line x1="6" y1="20" x2="6" y2="14"></line></svg>
+                    </div>
+                    <div class="kpi-info">
+                        <span class="kpi-label">Margen Promedio</span>
+                        <h3 id="kpi-margin" class="kpi-value">0%</h3>
+                        <div class="margin-progress-bar">
+                            <div id="kpi-margin-bar" class="margin-progress-fill" style="width: 0%;"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Double Column layout for chart/recent actions -->
+            <div class="dashboard-details">
+                <div class="card detail-card analytics-card">
+                    <h4>Distribución Financiera</h4>
+                    <div class="chart-container">
+                        <div class="donut-chart-wrapper">
+                            <svg class="donut-chart" width="160" height="160" viewBox="0 0 36 36">
+                                <circle class="donut-ring" cx="18" cy="18" r="15.915" fill="transparent" stroke="var(--bg-card-hover)" stroke-width="3"></circle>
+                                <circle id="donut-segment-cost" class="donut-segment cost" cx="18" cy="18" r="15.915" fill="transparent" stroke="var(--danger)" stroke-width="3" stroke-dasharray="0 100" stroke-dashoffset="25"></circle>
+                                <circle id="donut-segment-profit" class="donut-segment profit" cx="18" cy="18" r="15.915" fill="transparent" stroke="var(--success)" stroke-width="3" stroke-dasharray="0 100" stroke-dashoffset="25"></circle>
+                            </svg>
+                            <div class="donut-center-text">
+                                <span id="donut-percentage">0%</span>
+                                <small>Margen</small>
+                            </div>
+                        </div>
+                        <div class="chart-legend">
+                            <div class="legend-item">
+                                <span class="legend-dot profit"></span>
+                                <div>
+                                    <p class="legend-label">Ganancia Neta</p>
+                                    <p class="legend-value" id="legend-profit">$0</p>
+                                </div>
+                            </div>
+                            <div class="legend-item">
+                                <span class="legend-dot cost"></span>
+                                <div>
+                                    <p class="legend-label">Costo Total</p>
+                                    <p class="legend-value" id="legend-cost">$0</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card detail-card quick-actions-card">
+                    <h4>Acciones Rápidas</h4>
+                    <div class="quick-buttons">
+                        <button class="btn btn-primary btn-icon-text" id="quick-add-sale-btn">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                            Registrar Venta
+                        </button>
+                        <button class="btn btn-outline btn-icon-text" id="quick-add-expense-btn">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                            Registrar Gasto Extra
+                        </button>
+                    </div>
+
+                    <div class="stats-insights">
+                        <h5>Análisis del Negocio</h5>
+                        <ul class="insights-list" id="insights-list">
+                            <li><span class="insight-bullet yellow"></span> Carga datos de ingredientes para empezar a calcular costos.</li>
+                            <li><span class="insight-bullet brown"></span> Registra tus ventas para ver crecer tu gráfico de ganancias.</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 2. INGREDIENTES TAB -->
+        <section id="tab-inventory" class="tab-content">
+            <div class="section-header">
+                <h2>Ingredientes y Materiales</h2>
+                <p>Gestiona tu inventario con los precios de compra. Esto sirve de base para armar tus lotes de cuchuflís.</p>
+            </div>
+
+            <div class="layout-grid">
+                <!-- Add/Edit Ingredient Form -->
+                <div class="card form-card">
+                    <h3 id="ingredient-form-title">Añadir Ingrediente / Material</h3>
+                    <form id="ingredient-form">
+                        <input type="hidden" id="ingredient-id">
+                        
+                        <div class="form-group">
+                            <label for="ingredient-name">Nombre</label>
+                            <input type="text" id="ingredient-name" placeholder="Ej: Manjar Colun, Chocolates Negrita, Bolsitas" required>
+                        </div>
+
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="ingredient-category">Categoría</label>
+                                <select id="ingredient-category" required>
+                                    <option value="Ingrediente">Ingrediente</option>
+                                    <option value="Envoltura">Envoltura/Bolsita</option>
+                                    <option value="Decoración">Decoración</option>
+                                    <option value="Otro">Otro</option>
+                                </select>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="ingredient-unit">Unidad de Compra</label>
+                                <select id="ingredient-unit" required>
+                                    <option value="gr">Gramos (gr)</option>
+                                    <option value="kg">Kilogramos (kg)</option>
+                                    <option value="un">Unidades (un)</option>
+                                    <option value="ml">Mililitros (ml)</option>
+                                    <option value="L">Litros (L)</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="ingredient-price">Precio de Compra ($)</label>
+                                <input type="number" id="ingredient-price" min="0" placeholder="Ej: 3500" required>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="ingredient-size">Cantidad del Paquete</label>
+                                <input type="number" id="ingredient-size" min="0.001" step="any" placeholder="Ej: 1000 (para 1kg)" required>
+                            </div>
+                        </div>
+
+                        <div class="form-actions">
+                            <button type="submit" class="btn btn-primary" id="btn-save-ingredient">Guardar Ingrediente</button>
+                            <button type="button" class="btn btn-outline" id="btn-cancel-ingredient" style="display: none;">Cancelar</button>
+                        </div>
+                    </form>
+                </div>
+
+                <!-- Ingredients List Table -->
+                <div class="card list-card table-responsive">
+                    <h3>Lista de Ingredientes</h3>
+                    <table class="data-table" id="ingredients-table">
+                        <thead>
+                            <tr>
+                                <th>Nombre</th>
+                                <th>Categoría</th>
+                                <th>Paquete</th>
+                                <th>Precio Compra</th>
+                                <th>Costo Unitario Base</th>
+                                <th>Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody id="ingredients-list-body">
+                            <!-- Dynamic Content -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <!-- 3. CALCULADORA LOTES TAB -->
+        <section id="tab-calculator" class="tab-content">
+            <div class="section-header">
+                <h2>Calculadora de Lotes de Producción</h2>
+                <p>Arma una receta, calcula cuánto cuesta hacer cada cuchuflí y define tu precio de venta ideal.</p>
+            </div>
+
+            <div class="layout-grid-calc">
+                <!-- Recipe Builder -->
+                <div class="card builder-card">
+                    <h3>Armar Lote de Producción</h3>
+                    <form id="recipe-info-form">
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="recipe-name">Nombre del Lote / Producto</label>
+                                <input type="text" id="recipe-name" placeholder="Ej: Cuchuflís de Manjar Simples (50 un)" required>
+                            </div>
+                            <div class="form-group flex-small">
+                                <label for="recipe-yield">Cantidad de Cuchuflís</label>
+                                <input type="number" id="recipe-yield" min="1" value="50" required>
+                            </div>
+                        </div>
+                    </form>
+
+                    <div class="recipe-ingredient-adder">
+                        <h4>Añadir Ingredientes al Lote</h4>
+                        <div class="adder-row">
+                            <div class="form-group flex-large">
+                                <label for="select-calc-ingredient">Seleccionar Ingrediente</label>
+                                <select id="select-calc-ingredient">
+                                    <!-- Dynamic Options from Inventory -->
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="calc-ingredient-quantity">Cantidad Usada</label>
+                                <div class="input-unit-group">
+                                    <input type="number" id="calc-ingredient-quantity" min="0.001" step="any" placeholder="Ej: 500">
+                                    <span id="calc-unit-label" class="unit-badge">gr</span>
+                                </div>
+                            </div>
+                            <button type="button" class="btn btn-outline" id="btn-add-ingredient-to-recipe">Agregar</button>
+                        </div>
+                    </div>
+
+                    <!-- Ingredients Added to Current Recipe -->
+                    <div class="recipe-ingredients-list table-responsive">
+                        <table class="data-table small">
+                            <thead>
+                                <tr>
+                                    <th>Ingrediente</th>
+                                    <th>Cant. Usada</th>
+                                    <th>Costo Contribución</th>
+                                    <th>Acción</th>
+                                </tr>
+                            </thead>
+                            <tbody id="recipe-ingredients-body">
+                                <tr>
+                                    <td colspan="4" class="text-center text-muted">Aún no has agregado ingredientes a este lote.</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Cost Analysis & Pricing Card -->
+                <div class="card analysis-card">
+                    <h3>Análisis y Precio de Venta</h3>
+                    
+                    <div class="cost-summary-box">
+                        <div class="summary-row">
+                            <span>Costo Total Lote:</span>
+                            <strong id="summary-total-cost">$0</strong>
+                        </div>
+                        <div class="summary-row highlighted">
+                            <span>Costo por Cuchuflí:</span>
+                            <strong id="summary-unit-cost">$0.00</strong>
+                        </div>
+                    </div>
+
+                    <div class="markup-references">
+                        <h4>Precios Sugeridos por Margen</h4>
+                        <div class="markup-grid">
+                            <div class="markup-box" id="markup-50" data-multiplier="1.5">
+                                <span class="markup-pct">50% Ganancia</span>
+                                <strong class="markup-price">$0</strong>
+                                <span class="markup-desc">(Precio recomendado)</span>
+                            </div>
+                            <div class="markup-box highlighted" id="markup-100" data-multiplier="2">
+                                <span class="markup-pct">100% Ganancia (2x)</span>
+                                <strong class="markup-price">$0</strong>
+                                <span class="markup-desc">(Duplicar costo)</span>
+                            </div>
+                            <div class="markup-box" id="markup-150" data-multiplier="2.5">
+                                <span class="markup-pct">150% Ganancia</span>
+                                <strong class="markup-price">$0</strong>
+                                <span class="markup-desc">(Premium)</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="pricing-setter">
+                        <label for="input-selling-price" class="pricing-label">
+                            <span>Establecer Precio de Venta (por unidad)</span>
+                            <span id="label-selling-price">$0</span>
+                        </label>
+                        <input type="range" id="slider-selling-price" min="0" max="2000" step="10" value="300">
+                        <div class="pricing-manual-input">
+                            <span>O escribe un precio manual: </span>
+                            <input type="number" id="input-selling-price" min="0" placeholder="Ej: 350">
+                        </div>
+                    </div>
+
+                    <!-- Profit Math Preview -->
+                    <div class="profit-calculator-preview">
+                        <div class="preview-item">
+                            <span>Costo Unitario:</span>
+                            <span id="preview-unit-cost" class="text-muted">$0</span>
+                        </div>
+                        <div class="preview-item">
+                            <span>Precio de Venta:</span>
+                            <span id="preview-sell-price" class="text-primary">$0</span>
+                        </div>
+                        <div class="preview-item bold">
+                            <span>Ganancia por Unidad:</span>
+                            <span id="preview-unit-profit" class="text-success">$0</span>
+                        </div>
+                        <div class="preview-item bold">
+                            <span>Margen de Ganancia:</span>
+                            <span id="preview-margin-pct" class="badge-margin">0%</span>
+                        </div>
+                        <div class="preview-item">
+                            <span>Ganancia Total Lote (100% vendido):</span>
+                            <span id="preview-total-profit" class="text-success font-large">$0</span>
+                        </div>
+                    </div>
+
+                    <div class="save-recipe-action">
+                        <button type="button" class="btn btn-primary w-full btn-icon-text" id="btn-save-recipe">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path><polyline points="17 21 17 13 7 13 7 21"></polyline><polyline points="7 3 7 8 15 8"></polyline></svg>
+                            Registrar Lote y Guardar Producto
+                        </button>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Saved recipes/products list -->
+            <div class="card recipes-list-card table-responsive">
+                <h3>Recetas y Productos Guardados</h3>
+                <p class="description">Selecciona un producto aquí para registrar ventas rápidamente.</p>
+                <table class="data-table" id="recipes-table">
+                    <thead>
+                        <tr>
+                            <th>Nombre Producto</th>
+                            <th>Rendimiento Lote</th>
+                            <th>Costo Lote</th>
+                            <th>Costo Unitario</th>
+                            <th>Precio Venta</th>
+                            <th>Ganancia/U</th>
+                            <th>Margen</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody id="recipes-list-body">
+                        <!-- Dynamic Content -->
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- 4. VENTAS Y GASTOS TAB -->
+        <section id="tab-transactions" class="tab-content">
+            <div class="section-header">
+                <h2>Ventas y Gastos del Negocio</h2>
+                <p>Lleva el registro de tus ventas reales y gastos adicionales (gas, envíos, ingredientes extras) para tener un control exacto de tus finanzas.</p>
+            </div>
+
+            <div class="layout-grid">
+                <!-- Log forms card -->
+                <div class="card form-card">
+                    <div class="form-tabs">
+                        <button class="form-tab-btn active" id="form-tab-sale">Registrar Venta</button>
+                        <button class="form-tab-btn" id="form-tab-expense">Registrar Gasto Extra</button>
+                        <button class="form-tab-btn" id="form-tab-purchase">Registrar Compra (Boleta)</button>
+                    </div>
+
+                    <!-- SALE FORM -->
+                    <form id="sale-form" class="transaction-form-content active">
+                        <div class="form-group">
+                            <label for="sale-recipe-id">Producto / Receta de Cuchuflí</label>
+                            <select id="sale-recipe-id" required>
+                                <option value="">-- Selecciona un producto --</option>
+                                <!-- Dynamic Options -->
+                            </select>
+                            <span class="help-text">¿No tienes productos en la lista? Créalos primero en la pestaña <strong>Calculadora Lotes</strong>.</span>
+                        </div>
+
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="sale-quantity">Cantidad Vendida</label>
+                                <input type="number" id="sale-quantity" min="1" placeholder="Ej: 12" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="sale-unit-price">Precio Unitario Aplicado ($)</label>
+                                <input type="number" id="sale-unit-price" min="0" placeholder="Ej: 400" required>
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="sale-date">Fecha de la Venta</label>
+                            <input type="date" id="sale-date" required>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="sale-notes">Notas (Opcional)</label>
+                            <input type="text" id="sale-notes" placeholder="Ej: Venta a la tía María, pack de 12">
+                        </div>
+
+                        <div class="form-actions">
+                            <button type="submit" class="btn btn-primary">Registrar Venta</button>
+                        </div>
+                    </form>
+
+                    <!-- DIRECT EXPENSE FORM -->
+                    <form id="expense-form" class="transaction-form-content">
+                        <div class="form-group">
+                            <label for="expense-description">Descripción del Gasto</label>
+                            <input type="text" id="expense-description" placeholder="Ej: Balón de Gas, Cinta de regalo, Electricidad" required>
+                        </div>
+
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="expense-amount">Monto del Gasto ($)</label>
+                                <input type="number" id="expense-amount" min="1" placeholder="Ej: 15000" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="expense-date">Fecha del Gasto</label>
+                                <input type="date" id="expense-date" required>
+                            </div>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="expense-category">Categoría del Gasto</label>
+                            <select id="expense-category" required>
+                                <option value="Insumos Extra">Insumos/Ingredientes Extra</option>
+                                <option value="Servicios">Servicios (Gas, Luz, Agua)</option>
+                                <option value="Packaging">Embalaje / Packaging</option>
+                                <option value="Transporte">Transporte / Despacho</option>
+                                <option value="Otro">Otro</option>
+                            </select>
+                        </div>
+
+                        <div class="form-actions">
+                            <button type="submit" class="btn btn-primary">Registrar Gasto</button>
+                        </div>
+                    </form>
+
+                    <!-- PURCHASE FORM (INGREDIENT BOLETA) -->
+                    <form id="purchase-form" class="transaction-form-content">
+                        <div class="form-group">
+                            <label for="purchase-ingredient-id">Ingrediente / Material Comprado</label>
+                            <select id="purchase-ingredient-id" required>
+                                <option value="">-- Selecciona un ingrediente --</option>
+                                <!-- Dynamic Options -->
+                            </select>
+                            <span class="help-text">¿No está en la lista? Agrégalo primero en la pestaña <strong>Ingredientes</strong>.</span>
+                        </div>
+
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="purchase-quantity">Cantidad de Paquetes</label>
+                                <input type="number" id="purchase-quantity" min="1" value="1" placeholder="Ej: 2" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="purchase-total-price">Total Pagado ($)</label>
+                                <input type="number" id="purchase-total-price" min="0" placeholder="Ej: 7600" required>
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="purchase-date">Fecha de Compra</label>
+                            <input type="date" id="purchase-date" required>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="purchase-notes">N° Boleta / Notas (Opcional)</label>
+                            <input type="text" id="purchase-notes" placeholder="Ej: Boleta #4829, Distribuidora">
+                        </div>
+
+                        <div class="form-actions">
+                            <button type="submit" class="btn btn-primary">Registrar Compra</button>
+                        </div>
+                    </form>
+                </div>
+
+                <!-- Transaction List -->
+                <div class="card list-card table-responsive">
+                    <div class="list-header-actions">
+                        <h3>Historial de Transacciones</h3>
+                        <button class="btn btn-outline btn-xs" id="btn-clear-transactions">Limpiar Historial</button>
+                    </div>
+                    <table class="data-table" id="transactions-table">
+                        <thead>
+                            <tr>
+                                <th>Fecha</th>
+                                <th>Tipo</th>
+                                <th>Detalle</th>
+                                <th>Monto</th>
+                                <th>Ganancia Estimada</th>
+                                <th>Acción</th>
+                            </tr>
+                        </thead>
+                        <tbody id="transactions-list-body">
+                            <!-- Dynamic Content -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+    </main>
+
+
+    <footer class="app-footer">
+        <p>&copy; 2026 Cuchuflí Pro - Hecho para emprendedores reposteros.</p>
+    </footer>
+
+    <!-- App Logic -->
+    <script src="app.js?v=3"></script>
+</body>
+</html>
