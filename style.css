@@ -1081,3 +1081,89 @@ input[type="range"]::-webkit-slider-thumb:hover {
     background-color: var(--danger-glow);
     border-color: var(--danger);
 }
+
+/* Sale Mode Option Selector */
+.sale-mode-container {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background-color: var(--bg-card-hover);
+    padding: 8px 12px;
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--border-color);
+}
+
+.sale-mode-options {
+    display: flex;
+    gap: 16px;
+}
+
+.sale-mode-label {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-weight: 500;
+    cursor: pointer;
+    color: var(--text-main);
+    font-size: 0.9rem;
+}
+
+.sale-mode-label input[type="radio"] {
+    accent-color: var(--primary);
+    cursor: pointer;
+}
+
+.sale-equivalence-box {
+    margin-top: -8px;
+    margin-bottom: 16px;
+}
+
+.sale-equivalence-text {
+    font-weight: 600;
+    font-size: 0.88rem;
+    padding: 8px 12px;
+    background-color: rgba(16, 185, 129, 0.08);
+    border-radius: var(--radius-sm);
+    border-left: 3px solid var(--success);
+    display: block;
+}
+
+.sale-equivalence-text.bags {
+    background-color: var(--primary-glow);
+    border-left-color: var(--primary);
+}
+
+/* Multi-bag distribution styles */
+.recipe-distribution-section .data-table input.dist-input {
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-sm);
+    background: var(--bg-card);
+    color: var(--text-main);
+    padding: 6px;
+    font-size: 0.9rem;
+    transition: border-color var(--transition-fast);
+}
+
+.recipe-distribution-section .data-table input.dist-input:focus {
+    outline: none;
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px var(--primary-glow);
+}
+
+#sale-format-select {
+    width: 100%;
+    padding: 10px 12px;
+    border-radius: var(--radius-md);
+    border: 1px solid var(--border-color);
+    background-color: var(--bg-card);
+    color: var(--text-main);
+    font-size: 0.95rem;
+    cursor: pointer;
+    transition: all var(--transition-fast) ease;
+}
+
+#sale-format-select:focus {
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px var(--primary-glow);
+    outline: none;
+}

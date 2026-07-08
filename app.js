@@ -15,14 +15,18 @@ const DEFAULT_STATE = {
         {
             id: "rec-1",
             name: "Cuchuflí Clásico de Manjar",
-            yield: 50,
+            yield: 120,
             ingredients: [
-                { id: "ing-1", quantity: 500 }, // 500g manjar = $1900
-                { id: "ing-2", quantity: 50 },  // 50 wafers = $1000
-                { id: "ing-4", quantity: 50 },  // 50 bags = $600
-                { id: "ing-5", quantity: 50 }   // 50 ribbons = $400
-            ], // Total Cost = $3900. Unit Cost = $78 CLP.
-            sellingPrice: 250 // Unit Sale Price = $250. Margin = 68.8%
+                { id: "ing-1", quantity: 1200 }, // 1200g manjar = $4560
+                { id: "ing-2", quantity: 120 },  // 120 wafers = $2400
+                { id: "ing-4", quantity: 120 },  // 120 bags = $1440
+                { id: "ing-5", quantity: 120 }   // 120 ribbons = $960
+            ], // Total Cost = $9360. Unit Cost = $78 CLP.
+            formats: [
+                { cuchuflisPerBag: 4, bagsCount: 25, sellingPrice: 1000 },
+                { cuchuflisPerBag: 5, bagsCount: 4, sellingPrice: 1000 }
+            ],
+            sellingPrice: 250
         },
         {
             id: "rec-2",
@@ -35,7 +39,10 @@ const DEFAULT_STATE = {
                 { id: "ing-4", quantity: 50 },  // 50 bags = $600
                 { id: "ing-5", quantity: 50 }   // 50 ribbons = $400
             ], // Total Cost = $4800. Unit Cost = $96 CLP.
-            sellingPrice: 400 // Unit Sale Price = $400. Margin = 76%
+            formats: [
+                { cuchuflisPerBag: 4, bagsCount: 12, sellingPrice: 1500 }
+            ],
+            sellingPrice: 400
         }
     ],
     transactions: [
@@ -59,6 +66,7 @@ let appState = {};
 
 // Current builder recipe state
 let currentRecipeIngredients = []; // array of { id, quantity }
+let currentRecipeFormats = []; // array of { cuchuflisPerBag, bagsCount, sellingPrice }
 
 // Load state from local storage or set default
 function initAppState() {
@@ -69,6 +77,23 @@ function initAppState() {
             // Verify structure
             if (!appState.ingredients || !appState.recipes || !appState.transactions) {
                 appState = JSON.parse(JSON.stringify(DEFAULT_STATE));
+            } else {
+                // Ensure all loaded recipes have a formats list
+                appState.recipes.forEach(rec => {
+                    if (!rec.formats) {
+                        rec.formats = [];
+                        if (rec.cuchuflisPerBag) {
+                            const bags = Math.floor(rec.yield / rec.cuchuflisPerBag);
+                            if (bags > 0) {
+                                rec.formats.push({
+                                    cuchuflisPerBag: rec.cuchuflisPerBag,
+                                    bagsCount: bags,
+                                    sellingPrice: rec.sellingPrice * rec.cuchuflisPerBag
+                                });
+                            }
+                        }
+                    }
+                });
             }
         } catch (e) {
             appState = JSON.parse(JSON.stringify(DEFAULT_STATE));
@@ -582,43 +607,151 @@ function updateRecipeBuilderOutput() {
     const unitCost = totalBatchCost / yieldQty;
     document.getElementById("summary-total-cost").textContent = formatCLP(totalBatchCost);
     document.getElementById("summary-unit-cost").textContent = formatCLP(unitCost);
-    
-    document.getElementById("preview-unit-cost").textContent = formatCLP(unitCost);
 
-    // Markup suggestion boxes
-    const pricingSlider = document.getElementById("slider-selling-price");
+    // Calculate dynamic bags assignment
+    const assignedCuchuflis = currentRecipeFormats.reduce((sum, f) => sum + (f.cuchuflisPerBag * f.bagsCount), 0);
+    const assignPct = yieldQty > 0 ? (assignedCuchuflis / yieldQty) * 100 : 0;
+    const assignStatusEl = document.getElementById("summary-assign-status");
+    assignStatusEl.textContent = `${assignedCuchuflis} de ${yieldQty} un. (${assignPct.toFixed(0)}%)`;
     
-    // Sugeridos
-    const markups = [
-        { id: "markup-50", multiplier: 1.5 },
-        { id: "markup-100", multiplier: 2.0 },
-        { id: "markup-150", multiplier: 2.5 }
-    ];
-
-    markups.forEach(m => {
-        const box = document.getElementById(m.id);
-        const price = Math.round(unitCost * m.multiplier);
-        box.querySelector(".markup-price").textContent = formatCLP(price);
-        box.onclick = () => {
-            pricingSlider.value = price;
-            updateProfitMath(price, unitCost, yieldQty);
-        };
-    });
-
-    // Configure slider limits dynamically
-    const maxSuggested = Math.ceil(unitCost * 3.5);
-    pricingSlider.min = Math.floor(unitCost).toString();
-    pricingSlider.max = Math.max(1000, maxSuggested).toString();
-    
-    // Set Slider value if lower than unit cost
-    let activePrice = parseFloat(pricingSlider.value);
-    if (activePrice < unitCost) {
-        activePrice = Math.round(unitCost * 2);
-        pricingSlider.value = activePrice.toString();
+    if (assignedCuchuflis === yieldQty) {
+        assignStatusEl.className = "badge-margin";
+        assignStatusEl.style.backgroundColor = "var(--success-glow)";
+        assignStatusEl.style.color = "var(--success)";
+    } else if (assignedCuchuflis < yieldQty) {
+        assignStatusEl.className = "badge-margin";
+        assignStatusEl.style.backgroundColor = "rgba(245, 158, 11, 0.1)";
+        assignStatusEl.style.color = "var(--warning)";
+    } else {
+        assignStatusEl.className = "badge-margin";
+        assignStatusEl.style.backgroundColor = "var(--danger-glow)";
+        assignStatusEl.style.color = "var(--danger)";
     }
 
-    updateProfitMath(activePrice, unitCost, yieldQty);
+    const totalBags = currentRecipeFormats.reduce((sum, f) => sum + f.bagsCount, 0);
+    document.getElementById("summary-total-bags").textContent = `${totalBags} bolsa(s)`;
+
+    // Render distribution table
+    renderDistributionTable(unitCost);
+
+    // Toggle pricing setters based on format presence
+    const isDistributed = currentRecipeFormats.length > 0;
+    
+    if (isDistributed) {
+        document.getElementById("unit-pricing-slider-fields").style.display = "none";
+        document.getElementById("dist-pricing-info").style.display = "block";
+        document.getElementById("recipe-markup-references-section").style.display = "none";
+        
+        document.getElementById("unit-profit-preview").style.display = "none";
+        document.getElementById("dist-profit-preview").style.display = "block";
+
+        const totalRevenue = currentRecipeFormats.reduce((sum, f) => sum + (f.bagsCount * f.sellingPrice), 0);
+        const totalProfit = totalRevenue - totalBatchCost;
+        const marginPct = totalRevenue > 0 ? (totalProfit / totalRevenue) * 100 : 0;
+
+        document.getElementById("preview-dist-revenue").textContent = formatCLP(totalRevenue);
+        
+        const remainder = yieldQty - assignedCuchuflis;
+        let detailsHtml = currentRecipeFormats
+            .filter(f => f.bagsCount > 0)
+            .map(f => `${f.bagsCount} bolsa(s) de ${f.cuchuflisPerBag} un. x ${formatCLP(f.sellingPrice)}`)
+            .join("<br>");
+        if (remainder > 0) {
+            detailsHtml += `<br><small class="text-muted">(${remainder} sueltos sin empaquetar)</small>`;
+        } else if (remainder < 0) {
+            detailsHtml += `<br><strong style="color: var(--danger);">(! Exceso: ${Math.abs(remainder)} un.)</strong>`;
+        }
+        document.getElementById("preview-dist-details").innerHTML = detailsHtml || "Ninguna bolsa asignada";
+
+        updatePreviewProfitAndMargin(totalProfit, marginPct);
+    } else {
+        document.getElementById("unit-pricing-slider-fields").style.display = "block";
+        document.getElementById("dist-pricing-info").style.display = "none";
+        document.getElementById("recipe-markup-references-section").style.display = "block";
+        
+        document.getElementById("unit-profit-preview").style.display = "block";
+        document.getElementById("dist-profit-preview").style.display = "none";
+
+        const pricingSlider = document.getElementById("slider-selling-price");
+        const maxSuggested = Math.ceil(unitCost * 3.5);
+        pricingSlider.min = Math.floor(unitCost).toString();
+        pricingSlider.max = Math.max(1000, maxSuggested).toString();
+        
+        let activePrice = parseFloat(pricingSlider.value);
+        if (activePrice < unitCost) {
+            activePrice = Math.round(unitCost * 2);
+            pricingSlider.value = activePrice.toString();
+        }
+
+        updateProfitMath(activePrice, unitCost, yieldQty);
+    }
 }
+
+function renderDistributionTable(unitCost) {
+    const tbody = document.getElementById("distribution-tbody");
+    if (!tbody) return;
+    
+    tbody.innerHTML = "";
+    if (currentRecipeFormats.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="5" class="text-center text-muted" style="padding: 12px;">No hay formatos configurados. Se usará el precio unitario general.</td></tr>`;
+        return;
+    }
+    
+    currentRecipeFormats.forEach((fmt, index) => {
+        const bagCost = unitCost * fmt.cuchuflisPerBag;
+        const tr = document.createElement("tr");
+        tr.innerHTML = `
+            <td>
+                <input type="number" class="dist-input dist-cuchuflis" data-index="${index}" min="1" value="${fmt.cuchuflisPerBag}" style="width: 75px; padding: 6px; border-radius: 4px; border: 1px solid var(--border-color); background: var(--bg-card); color: var(--text-main);">
+            </td>
+            <td>
+                <input type="number" class="dist-input dist-bags" data-index="${index}" min="0" value="${fmt.bagsCount}" style="width: 75px; padding: 6px; border-radius: 4px; border: 1px solid var(--border-color); background: var(--bg-card); color: var(--text-main);">
+            </td>
+            <td>
+                <div style="display: inline-flex; align-items: center; border: 1px solid var(--border-color); border-radius: 4px; overflow: hidden; background: var(--bg-card);">
+                    <span style="padding: 6px 8px; background: var(--bg-card-hover); color: var(--text-muted); font-size: 0.85rem; font-weight: 600; border-right: 1px solid var(--border-color);">$</span>
+                    <input type="number" class="dist-input dist-price" data-index="${index}" min="0" value="${fmt.sellingPrice}" style="width: 80px; padding: 6px; border: none; background: transparent; color: var(--text-main); font-family: inherit; font-size: 0.95rem; text-align: right;">
+                </div>
+            </td>
+            <td style="vertical-align: middle;">
+                <strong>${formatCLP(bagCost)}</strong>
+            </td>
+            <td style="vertical-align: middle;">
+                <button type="button" class="btn-action-icon delete btn-xs" onclick="removeDistributionRow(${index})" title="Eliminar formato">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                </button>
+            </td>
+        `;
+        tbody.appendChild(tr);
+    });
+    
+    // Wire up input changes
+    tbody.querySelectorAll(".dist-input").forEach(input => {
+        input.addEventListener("input", (e) => {
+            const idx = parseInt(e.target.getAttribute("data-index"));
+            const val = parseFloat(e.target.value) || 0;
+            if (e.target.classList.contains("dist-cuchuflis")) {
+                currentRecipeFormats[idx].cuchuflisPerBag = Math.max(1, parseInt(val) || 1);
+            } else if (e.target.classList.contains("dist-bags")) {
+                currentRecipeFormats[idx].bagsCount = Math.max(0, parseInt(val) || 0);
+            } else if (e.target.classList.contains("dist-price")) {
+                currentRecipeFormats[idx].sellingPrice = Math.max(0, val);
+            }
+            updateRecipeBuilderOutput();
+        });
+    });
+}
+
+window.removeDistributionRow = function(index) {
+    currentRecipeFormats.splice(index, 1);
+    updateRecipeBuilderOutput();
+};
+
+document.getElementById("btn-add-distribution-row").addEventListener("click", () => {
+    // Add default format: 4 cuchuflís, 0 bags, 1000 selling price
+    currentRecipeFormats.push({ cuchuflisPerBag: 4, bagsCount: 0, sellingPrice: 1000 });
+    updateRecipeBuilderOutput();
+});
 
 function removeIngredientFromRecipe(index) {
     currentRecipeIngredients.splice(index, 1);
@@ -654,6 +787,30 @@ inputSelling.addEventListener("input", (e) => {
     handlePriceChange(e.target.value);
 });
 
+function updatePreviewProfitAndMargin(totalProfit, marginPct) {
+    const marginBadge = document.getElementById("preview-margin-pct");
+    marginBadge.textContent = `${marginPct.toFixed(1)}%`;
+    
+    if (marginPct >= 50) {
+        marginBadge.style.backgroundColor = "var(--success-glow)";
+        marginBadge.style.color = "var(--success)";
+    } else if (marginPct > 15) {
+        marginBadge.style.backgroundColor = "rgba(245, 158, 11, 0.1)";
+        marginBadge.style.color = "var(--warning)";
+    } else {
+        marginBadge.style.backgroundColor = "var(--danger-glow)";
+        marginBadge.style.color = "var(--danger)";
+    }
+
+    const profitValEl = document.getElementById("preview-total-profit");
+    profitValEl.textContent = formatCLP(totalProfit);
+    if (totalProfit >= 0) {
+        profitValEl.className = "text-success font-large";
+    } else {
+        profitValEl.className = "text-danger font-large";
+    }
+}
+
 function updateProfitMath(sellingPrice, unitCost, yieldQty) {
     document.getElementById("label-selling-price").textContent = formatCLP(sellingPrice);
     document.getElementById("preview-sell-price").textContent = formatCLP(sellingPrice);
@@ -669,22 +826,9 @@ function updateProfitMath(sellingPrice, unitCost, yieldQty) {
     }
 
     const marginPct = sellingPrice > 0 ? (profitPerUnit / sellingPrice) * 100 : 0;
-    const marginBadge = document.getElementById("preview-margin-pct");
-    marginBadge.textContent = `${marginPct.toFixed(1)}%`;
-    
-    if (marginPct >= 50) {
-        marginBadge.style.backgroundColor = "var(--success-glow)";
-        marginBadge.style.color = "var(--success)";
-    } else if (marginPct > 15) {
-        marginBadge.style.backgroundColor = "rgba(245, 158, 11, 0.1)";
-        marginBadge.style.color = "var(--warning)";
-    } else {
-        marginBadge.style.backgroundColor = "var(--danger-glow)";
-        marginBadge.style.color = "var(--danger)";
-    }
-
     const totalProfit = profitPerUnit * yieldQty;
-    document.getElementById("preview-total-profit").textContent = formatCLP(totalProfit);
+    
+    updatePreviewProfitAndMargin(totalProfit, marginPct);
 }
 
 // Save Recipe / Product Button
@@ -716,7 +860,8 @@ document.getElementById("btn-save-recipe").addEventListener("click", () => {
         name,
         yield: yieldQty,
         ingredients: JSON.parse(JSON.stringify(currentRecipeIngredients)),
-        sellingPrice
+        formats: JSON.parse(JSON.stringify(currentRecipeFormats)),
+        sellingPrice: currentRecipeFormats.length > 0 ? 0 : sellingPrice
     };
 
     appState.recipes.push(newRecipe);
@@ -724,14 +869,13 @@ document.getElementById("btn-save-recipe").addEventListener("click", () => {
 
     // Reset Recipe Builder state
     currentRecipeIngredients = [];
+    currentRecipeFormats = [];
     document.getElementById("recipe-name").value = "";
-    document.getElementById("recipe-yield").value = "50";
+    document.getElementById("recipe-yield").value = "120";
     
     alert("¡Producto y Lote guardados correctamente!");
     
-    renderRecipesList();
-    updateRecipeBuilderOutput();
-    updateRecipesDropdowns(); // Update sales selection lists
+    updateRecipesDropdowns();
 });
 
 function renderRecipesList() {
@@ -739,24 +883,53 @@ function renderRecipesList() {
     body.innerHTML = "";
 
     if (appState.recipes.length === 0) {
-        body.innerHTML = `<tr><td colspan="8" class="text-center text-muted">No hay recetas o productos guardados.</td></tr>`;
+        body.innerHTML = `<tr><td colspan="10" class="text-center text-muted">No hay recetas o productos guardados.</td></tr>`;
         return;
     }
 
     appState.recipes.forEach(rec => {
         const recipeCost = calculateRecipeUnitCost(rec);
         const totalCost = recipeCost * rec.yield;
-        const profit = rec.sellingPrice - recipeCost;
-        const margin = rec.sellingPrice > 0 ? (profit / rec.sellingPrice) * 100 : 0;
+        
+        let formatString = "Granel";
+        let bagCostSellString = "-";
+        let profit = 0;
+        let margin = 0;
+        let sellingPriceFormatted = "";
+
+        if (rec.formats && rec.formats.length > 0) {
+            // Distributed packaging mode
+            formatString = rec.formats.map(f => `${f.bagsCount} bolsita(s) (de ${f.cuchuflisPerBag})`).join("<br>");
+            bagCostSellString = rec.formats
+                .map(f => `${f.cuchuflisPerBag} un: <strong>${formatCLP(recipeCost * f.cuchuflisPerBag)}</strong> / <strong style="color: var(--primary);">${formatCLP(f.sellingPrice)}</strong>`)
+                .join("<br>");
+            
+            const totalRevenue = rec.formats.reduce((sum, f) => sum + (f.bagsCount * f.sellingPrice), 0);
+            const totalProfit = totalRevenue - totalCost;
+            profit = totalProfit / rec.yield; // average profit per unit
+            margin = totalRevenue > 0 ? (totalProfit / totalRevenue) * 100 : 0;
+            
+            const avgSellPrice = totalRevenue / rec.yield;
+            sellingPriceFormatted = `${formatCLP(avgSellPrice)} <small class="text-muted">(prom.)</small>`;
+        } else {
+            // Unit price mode
+            formatString = "Granel";
+            bagCostSellString = "-";
+            profit = rec.sellingPrice - recipeCost;
+            margin = rec.sellingPrice > 0 ? (profit / rec.sellingPrice) * 100 : 0;
+            sellingPriceFormatted = formatCLP(rec.sellingPrice);
+        }
 
         const tr = document.createElement("tr");
         tr.innerHTML = `
             <td><strong>${escapeHTML(rec.name)}</strong></td>
             <td>${rec.yield} un</td>
+            <td><span class="badge" style="background-color: var(--bg-card-hover); color: var(--text-main); border: 1px solid var(--border-color); text-align: left; padding: 4px 8px; height: auto; font-size: 0.82rem; line-height: 1.3;">${formatString}</span></td>
             <td>${formatCLP(totalCost)}</td>
             <td>${formatCLP(recipeCost)}</td>
-            <td>${formatCLP(rec.sellingPrice)}</td>
-            <td class="${profit >= 0 ? 'text-success' : 'text-danger'}">${formatCLP(profit)}</td>
+            <td>${sellingPriceFormatted}</td>
+            <td style="font-size: 0.88rem; line-height: 1.3;">${bagCostSellString}</td>
+            <td class="${profit >= 0 ? 'text-success' : 'text-danger'}">${formatCLP(profit)} <small class="text-muted">/u</small></td>
             <td><span class="badge-margin" style="background-color: ${margin >= 50 ? 'var(--success-glow)' : margin > 15 ? 'rgba(245,158,11,0.1)' : 'var(--danger-glow)'}; color: ${margin >= 50 ? 'var(--success)' : margin > 15 ? 'var(--warning)' : 'var(--danger)'}">${margin.toFixed(0)}%</span></td>
             <td>
                 <div class="actions">
@@ -789,6 +962,9 @@ function loadRecipeToCalculator(id) {
 
     document.getElementById("recipe-name").value = rec.name;
     document.getElementById("recipe-yield").value = rec.yield;
+    
+    currentRecipeFormats = JSON.parse(JSON.stringify(rec.formats || []));
+    
     sliderSelling.value = rec.sellingPrice;
     inputSelling.value = rec.sellingPrice;
 
@@ -826,7 +1002,14 @@ function renderTransactions() {
 
         if (tx.type === "sale") {
             typeBadge = '<span class="badge-margin" style="background-color: var(--success-glow); color: var(--success);">Venta</span>';
-            details = `<strong>${escapeHTML(tx.recipeName)}</strong><br><small class="text-muted">${tx.quantity} unidades x ${formatCLP(tx.unitPrice)} ${tx.notes ? `(${escapeHTML(tx.notes)})` : ""}</small>`;
+            let saleDetailsText = "";
+            if (tx.soldAsBags) {
+                const formatLabel = tx.formatName || "Bolsa";
+                saleDetailsText = `<strong>${tx.bagsQuantity} bolsita(s) (${formatLabel})</strong> x ${formatCLP(tx.bagPrice)} <small class="text-muted">(${tx.quantity} un. a ${formatCLP(tx.unitPrice)} c/u)</small>`;
+            } else {
+                saleDetailsText = `${tx.quantity} unidades sueltas x ${formatCLP(tx.unitPrice)}`;
+            }
+            details = `<strong>${escapeHTML(tx.recipeName)}</strong><br><small class="text-muted">${saleDetailsText} ${tx.notes ? `(${escapeHTML(tx.notes)})` : ""}</small>`;
             amountFormatted = `<span class="text-success">+ ${formatCLP(tx.totalAmount)}</span>`;
             profitFormatted = `<span class="text-success">${formatCLP(tx.estimatedProfit)}</span>`;
         } else if (tx.type === "purchase") {
@@ -864,24 +1047,177 @@ function updateRecipesDropdowns() {
     appState.recipes.forEach(rec => {
         const option = document.createElement("option");
         option.value = rec.id;
-        option.textContent = `${rec.name} (Venta: ${formatCLP(rec.sellingPrice)})`;
+        
+        let priceText = "";
+        if (rec.formats && rec.formats.length > 0) {
+            const formatsDesc = rec.formats.map(f => `${f.bagsCount} de ${f.cuchuflisPerBag}u`).join(", ");
+            priceText = `empaque: ${formatsDesc}`;
+        } else {
+            priceText = `Venta: ${formatCLP(rec.sellingPrice)}`;
+        }
+        option.textContent = `${rec.name} (${priceText})`;
         dropdown.appendChild(option);
     });
 }
 
-// Auto-fill selling price based on selected product in sales form
-document.getElementById("sale-recipe-id").addEventListener("change", (e) => {
-    const recipeId = e.target.value;
+function updateSaleFormatOptions(rec) {
+    const select = document.getElementById("sale-format-select");
+    if (!select) return;
+    select.innerHTML = "";
+    
+    // 1. Unidades sueltas
+    const unitCost = calculateRecipeUnitCost(rec);
+    const suggestedUnitSell = Math.round(unitCost * 2);
+    const unitPrice = rec.sellingPrice > 0 ? rec.sellingPrice : suggestedUnitSell;
+    
+    const optUnits = document.createElement("option");
+    optUnits.value = "units";
+    optUnits.textContent = `Unidades Sueltas (${formatCLP(unitPrice)} c/u)`;
+    select.appendChild(optUnits);
+
+    // 2. Defined formats
+    if (rec.formats && rec.formats.length > 0) {
+        rec.formats.forEach((fmt, idx) => {
+            const opt = document.createElement("option");
+            opt.value = `format-${idx}`;
+            opt.textContent = `Bolsita de ${fmt.cuchuflisPerBag} un. (${formatCLP(fmt.sellingPrice)})`;
+            select.appendChild(opt);
+        });
+    } else {
+        // Fallbacks
+        const optBags4 = document.createElement("option");
+        optBags4.value = "legacy-bag-4";
+        optBags4.textContent = `Bolsita de 4 un. (${formatCLP(unitPrice * 4)})`;
+        select.appendChild(optBags4);
+
+        const optBags5 = document.createElement("option");
+        optBags5.value = "legacy-bag-5";
+        optBags5.textContent = `Bolsita de 5 un. (${formatCLP(unitPrice * 5)})`;
+        select.appendChild(optBags5);
+    }
+}
+
+// Auto-fill selling price based on selected product and handle packaging modes
+function updateSaleFormLabelsAndCalculations() {
+    const recipeId = document.getElementById("sale-recipe-id").value;
+    const formatGroup = document.getElementById("sale-format-selector-group");
+    const labelQty = document.getElementById("label-sale-quantity");
+    const labelPrice = document.getElementById("label-sale-price");
+    const qtyInput = document.getElementById("sale-quantity");
     const priceInput = document.getElementById("sale-unit-price");
+    const equivGroup = document.getElementById("sale-equivalence-group");
+    const equivHelper = document.getElementById("sale-equivalence-helper");
+
+    if (!recipeId) {
+        formatGroup.style.display = "none";
+        equivGroup.style.display = "none";
+        labelQty.textContent = "Cantidad Vendida";
+        labelPrice.textContent = "Precio Unitario Aplicado ($)";
+        qtyInput.placeholder = "Ej: 12";
+        priceInput.placeholder = "Ej: 400";
+        return;
+    }
+
+    const rec = appState.recipes.find(r => r.id === recipeId);
+    if (!rec) return;
+
+    formatGroup.style.display = "block";
+
+    const select = document.getElementById("sale-format-select");
+    const formatValue = select.value;
+    let cuchuflisPerBag = 1;
+    let defaultPrice = rec.sellingPrice;
+    let isBag = false;
+
+    if (formatValue === "units") {
+        labelQty.textContent = "Cantidad Vendida (Unidades)";
+        labelPrice.textContent = "Precio por Cuchuflí ($)";
+        qtyInput.placeholder = "Ej: 12";
+        
+        const unitCost = calculateRecipeUnitCost(rec);
+        const suggestedUnitSell = Math.round(unitCost * 2);
+        defaultPrice = rec.sellingPrice > 0 ? rec.sellingPrice : suggestedUnitSell;
+        isBag = false;
+    } else if (formatValue.startsWith("format-")) {
+        const idx = parseInt(formatValue.split("-")[1]);
+        const fmt = rec.formats[idx];
+        cuchuflisPerBag = fmt.cuchuflisPerBag;
+        defaultPrice = fmt.sellingPrice;
+        labelQty.textContent = "Bolsitas Vendidas";
+        labelPrice.textContent = "Precio por Bolsita ($)";
+        qtyInput.placeholder = "Ej: 5";
+        isBag = true;
+    } else if (formatValue === "legacy-bag-4") {
+        cuchuflisPerBag = 4;
+        const unitCost = calculateRecipeUnitCost(rec);
+        const suggestedUnitSell = Math.round(unitCost * 2);
+        const unitPrice = rec.sellingPrice > 0 ? rec.sellingPrice : suggestedUnitSell;
+        defaultPrice = unitPrice * 4;
+        labelQty.textContent = "Bolsitas Vendidas";
+        labelPrice.textContent = "Precio por Bolsita ($)";
+        qtyInput.placeholder = "Ej: 5";
+        isBag = true;
+    } else if (formatValue === "legacy-bag-5") {
+        cuchuflisPerBag = 5;
+        const unitCost = calculateRecipeUnitCost(rec);
+        const suggestedUnitSell = Math.round(unitCost * 2);
+        const unitPrice = rec.sellingPrice > 0 ? rec.sellingPrice : suggestedUnitSell;
+        defaultPrice = unitPrice * 5;
+        labelQty.textContent = "Bolsitas Vendidas";
+        labelPrice.textContent = "Precio por Bolsita ($)";
+        qtyInput.placeholder = "Ej: 5";
+        isBag = true;
+    }
+
+    // Auto-fill price if format changed or input is empty
+    const lastFormat = select.getAttribute("data-last-format");
+    if (lastFormat !== formatValue || !priceInput.value) {
+        priceInput.value = defaultPrice;
+        select.setAttribute("data-last-format", formatValue);
+    }
+
+    // Live calculations helper
+    const qty = parseFloat(qtyInput.value) || 0;
+    const priceVal = parseFloat(priceInput.value) || 0;
+
+    if (qty > 0) {
+        equivGroup.style.display = "block";
+        if (isBag) {
+            const totalUnits = qty * cuchuflisPerBag;
+            const unitPrice = priceVal / cuchuflisPerBag;
+            equivHelper.innerHTML = `Equivale a <strong>${totalUnits}</strong> cuchuflís a <strong>${formatCLP(unitPrice)}</strong> c/u (Total: <strong>${formatCLP(qty * priceVal)}</strong>)`;
+            equivHelper.className = "sale-equivalence-text";
+        } else {
+            equivHelper.innerHTML = `Total Venta: <strong>${formatCLP(qty * priceVal)}</strong> por <strong>${qty}</strong> cuchuflís sueltos.`;
+            equivHelper.className = "sale-equivalence-text bags";
+        }
+    } else {
+        equivGroup.style.display = "none";
+    }
+}
+
+// Event Listeners for Sale Form
+document.getElementById("sale-recipe-id").addEventListener("change", (e) => {
+    const select = document.getElementById("sale-format-select");
+    select.innerHTML = "";
+    select.removeAttribute("data-last-format");
+    
+    document.getElementById("sale-quantity").value = "";
+    document.getElementById("sale-unit-price").value = "";
+    
+    const recipeId = e.target.value;
     if (recipeId) {
         const rec = appState.recipes.find(r => r.id === recipeId);
         if (rec) {
-            priceInput.value = rec.sellingPrice;
-            return;
+            updateSaleFormatOptions(rec);
         }
     }
-    priceInput.value = "";
+    updateSaleFormLabelsAndCalculations();
 });
+
+document.getElementById("sale-format-select").addEventListener("change", updateSaleFormLabelsAndCalculations);
+document.getElementById("sale-quantity").addEventListener("input", updateSaleFormLabelsAndCalculations);
+document.getElementById("sale-unit-price").addEventListener("input", updateSaleFormLabelsAndCalculations);
 
 // Tab toggle inside transaction form card (Venta / Gasto / Compra)
 const tabSaleBtn = document.getElementById("form-tab-sale");
@@ -947,8 +1283,35 @@ document.getElementById("sale-form").addEventListener("submit", (e) => {
     if (!rec) return;
 
     const unitCost = calculateRecipeUnitCost(rec);
-    const totalAmount = qty * unitPrice;
-    const estimatedCost = qty * unitCost;
+    const formatValue = document.getElementById("sale-format-select").value;
+    let cuchuflisPerBag = 1;
+    let isBags = false;
+
+    if (formatValue === "units") {
+        cuchuflisPerBag = 1;
+        isBags = false;
+    } else if (formatValue.startsWith("format-")) {
+        const idx = parseInt(formatValue.split("-")[1]);
+        cuchuflisPerBag = rec.formats[idx].cuchuflisPerBag;
+        isBags = true;
+    } else if (formatValue === "legacy-bag-4") {
+        cuchuflisPerBag = 4;
+        isBags = true;
+    } else if (formatValue === "legacy-bag-5") {
+        cuchuflisPerBag = 5;
+        isBags = true;
+    }
+
+    let finalQuantity = qty;
+    let finalUnitPrice = unitPrice;
+    let totalAmount = qty * unitPrice;
+
+    if (isBags) {
+        finalQuantity = qty * cuchuflisPerBag;
+        finalUnitPrice = unitPrice / cuchuflisPerBag;
+    }
+
+    const estimatedCost = finalQuantity * unitCost;
     const estimatedProfit = totalAmount - estimatedCost;
 
     const newSale = {
@@ -956,13 +1319,17 @@ document.getElementById("sale-form").addEventListener("submit", (e) => {
         type: "sale",
         recipeId,
         recipeName: rec.name,
-        quantity: qty,
-        unitPrice,
+        quantity: finalQuantity,
+        unitPrice: finalUnitPrice,
         totalAmount,
         estimatedCost,
         estimatedProfit,
         date,
-        notes
+        notes,
+        soldAsBags: isBags,
+        bagsQuantity: isBags ? qty : 0,
+        bagPrice: isBags ? unitPrice : 0,
+        formatName: isBags ? `Bolsa de ${cuchuflisPerBag} un.` : "Suelto"
     };
 
     appState.transactions.push(newSale);
@@ -970,11 +1337,14 @@ document.getElementById("sale-form").addEventListener("submit", (e) => {
     
     // Reset form
     document.getElementById("sale-form").reset();
+    document.getElementById("sale-format-select").innerHTML = "";
+    document.getElementById("sale-format-select").removeAttribute("data-last-format");
+    updateSaleFormLabelsAndCalculations();
     resetTransactionDates();
-
 
     alert("¡Venta registrada con éxito!");
     renderTransactions();
+    renderDashboard(); // Ensure dashboard values are re-rendered
 });
 
 // Submit Expense Form
@@ -1130,6 +1500,7 @@ quickSaleBtn.addEventListener("click", () => {
     activateFormTab("sale");
     updateRecipesDropdowns();
     resetTransactionDates();
+    updateSaleFormLabelsAndCalculations();
     // Smooth scroll to form
     const formCard = document.querySelector("#tab-transactions .form-card");
     if (formCard) formCard.scrollIntoView({ behavior: "smooth", block: "start" });

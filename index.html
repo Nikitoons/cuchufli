@@ -291,13 +291,15 @@
                     <h3>Armar Lote de Producción</h3>
                     <form id="recipe-info-form">
                         <div class="form-row">
-                            <div class="form-group">
+                            <div class="form-group" style="grid-column: span 2;">
                                 <label for="recipe-name">Nombre del Lote / Producto</label>
                                 <input type="text" id="recipe-name" placeholder="Ej: Cuchuflís de Manjar Simples (50 un)" required>
                             </div>
-                            <div class="form-group flex-small">
-                                <label for="recipe-yield">Cantidad de Cuchuflís</label>
-                                <input type="number" id="recipe-yield" min="1" value="50" required>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group" style="grid-column: span 2;">
+                                <label for="recipe-yield">Cantidad Total de Cuchuflís Producidos</label>
+                                <input type="number" id="recipe-yield" min="1" value="120" required>
                             </div>
                         </div>
                     </form>
@@ -340,6 +342,32 @@
                             </tbody>
                         </table>
                     </div>
+
+                    <!-- Distribución en Bolsitas -->
+                    <div class="recipe-distribution-section" style="margin-top: 24px; border-top: 1px solid var(--border-color); padding-top: 20px;">
+                        <h4 style="font-size: 1rem; margin-bottom: 4px; color: var(--text-main);">Distribución en Bolsitas (Opcional)</h4>
+                        <p class="help-text" style="margin-bottom: 12px; font-size: 0.85rem; color: var(--text-muted);">Divide tu producción en bolsas con distintos formatos y precios de venta.</p>
+                        
+                        <div class="table-responsive">
+                            <table class="data-table small" id="distribution-table" style="margin-bottom: 10px;">
+                                <thead>
+                                    <tr>
+                                        <th>Cuchuflís/Bolsa</th>
+                                        <th>Cant. Bolsas</th>
+                                        <th>Precio Venta Bolsa</th>
+                                        <th>Costo Bolsa</th>
+                                        <th>Acción</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="distribution-tbody">
+                                    <!-- Dynamic Rows -->
+                                </tbody>
+                            </table>
+                        </div>
+                        <button type="button" class="btn btn-outline btn-xs" id="btn-add-distribution-row">
+                            + Agregar Formato de Bolsa
+                        </button>
+                    </div>
                 </div>
 
                 <!-- Cost Analysis & Pricing Card -->
@@ -351,13 +379,21 @@
                             <span>Costo Total Lote:</span>
                             <strong id="summary-total-cost">$0</strong>
                         </div>
+                        <div class="summary-row">
+                            <span>Asignación de Cuchuflís:</span>
+                            <strong id="summary-assign-status" style="color: var(--text-main); font-weight: 700;">0 de 120 (0%)</strong>
+                        </div>
+                        <div class="summary-row">
+                            <span>Bolsas Totales a Hacer:</span>
+                            <strong id="summary-total-bags" style="color: var(--text-main); font-weight: 700;">0 bolsas</strong>
+                        </div>
                         <div class="summary-row highlighted">
-                            <span>Costo por Cuchuflí:</span>
+                            <span>Costo Base por Cuchuflí:</span>
                             <strong id="summary-unit-cost">$0.00</strong>
                         </div>
                     </div>
 
-                    <div class="markup-references">
+                    <div class="markup-references" id="recipe-markup-references-section">
                         <h4>Precios Sugeridos por Margen</h4>
                         <div class="markup-grid">
                             <div class="markup-box" id="markup-50" data-multiplier="1.5">
@@ -378,37 +414,62 @@
                         </div>
                     </div>
 
-                    <div class="pricing-setter">
-                        <label for="input-selling-price" class="pricing-label">
-                            <span>Establecer Precio de Venta (por unidad)</span>
-                            <span id="label-selling-price">$0</span>
-                        </label>
-                        <input type="range" id="slider-selling-price" min="0" max="2000" step="10" value="300">
-                        <div class="pricing-manual-input">
-                            <span>O escribe un precio manual: </span>
-                            <input type="number" id="input-selling-price" min="0" placeholder="Ej: 350">
+                    <div class="pricing-setter" id="unit-pricing-setter-wrapper">
+                        <!-- Standard single selling price slider -->
+                        <div id="unit-pricing-slider-fields">
+                            <label for="input-selling-price" class="pricing-label">
+                                <span>Establecer Precio de Venta (por unidad)</span>
+                                <span id="label-selling-price">$0</span>
+                            </label>
+                            <input type="range" id="slider-selling-price" min="0" max="2000" step="10" value="300">
+                            <div class="pricing-manual-input">
+                                <span>O escribe un precio manual: </span>
+                                <input type="number" id="input-selling-price" min="0" placeholder="Ej: 350">
+                            </div>
+                        </div>
+                        <!-- Distributed pricing helper info -->
+                        <div id="dist-pricing-info" style="display: none; text-align: center; padding: 6px 0;">
+                            <span class="badge-margin" style="background-color: var(--primary-glow); color: var(--primary); font-size: 0.9rem; padding: 6px 12px; display: block; text-align: left; font-weight: 600; line-height: 1.4; border-left: 3px solid var(--primary); border-radius: var(--radius-sm);">
+                                💡 Margen y ganancia calculados automáticamente en base a la distribución de bolsitas de la izquierda.
+                            </span>
                         </div>
                     </div>
 
                     <!-- Profit Math Preview -->
                     <div class="profit-calculator-preview">
-                        <div class="preview-item">
-                            <span>Costo Unitario:</span>
-                            <span id="preview-unit-cost" class="text-muted">$0</span>
+                        <!-- Unit price mode preview items -->
+                        <div id="unit-profit-preview">
+                            <div class="preview-item">
+                                <span>Costo Unitario:</span>
+                                <span id="preview-unit-cost" class="text-muted">$0</span>
+                            </div>
+                            <div class="preview-item">
+                                <span>Precio de Venta:</span>
+                                <span id="preview-sell-price" class="text-primary">$0</span>
+                            </div>
+                            <div class="preview-item bold">
+                                <span>Ganancia por Unidad:</span>
+                                <span id="preview-unit-profit" class="text-success">$0</span>
+                            </div>
                         </div>
-                        <div class="preview-item">
-                            <span>Precio de Venta:</span>
-                            <span id="preview-sell-price" class="text-primary">$0</span>
+
+                        <!-- Distributed mode preview items -->
+                        <div id="dist-profit-preview" style="display: none;">
+                            <div class="preview-item bold">
+                                <span>Ingreso Estimado por Lote:</span>
+                                <span id="preview-dist-revenue" class="text-primary">$0</span>
+                            </div>
+                            <div class="preview-item">
+                                <span>Detalle de Ventas:</span>
+                                <span id="preview-dist-details" class="text-muted" style="text-align: right; font-size: 0.82rem; line-height: 1.4;">-</span>
+                            </div>
                         </div>
-                        <div class="preview-item bold">
-                            <span>Ganancia por Unidad:</span>
-                            <span id="preview-unit-profit" class="text-success">$0</span>
-                        </div>
-                        <div class="preview-item bold">
+
+                        <div class="preview-item bold" style="border-top: 1px dashed var(--border-color); padding-top: 8px; margin-top: 8px;">
                             <span>Margen de Ganancia:</span>
                             <span id="preview-margin-pct" class="badge-margin">0%</span>
                         </div>
-                        <div class="preview-item">
+                        <div class="preview-item" style="border-top: 1px dashed var(--border-color); padding-top: 8px; margin-top: 8px;">
                             <span>Ganancia Total Lote (100% vendido):</span>
                             <span id="preview-total-profit" class="text-success font-large">$0</span>
                         </div>
@@ -432,9 +493,11 @@
                         <tr>
                             <th>Nombre Producto</th>
                             <th>Rendimiento Lote</th>
+                            <th>Formato</th>
                             <th>Costo Lote</th>
                             <th>Costo Unitario</th>
                             <th>Precio Venta</th>
+                            <th>Costo/Venta Bolsita</th>
                             <th>Ganancia/U</th>
                             <th>Margen</th>
                             <th>Acciones</th>
@@ -474,15 +537,25 @@
                             <span class="help-text">¿No tienes productos en la lista? Créalos primero en la pestaña <strong>Calculadora Lotes</strong>.</span>
                         </div>
 
+                        <div class="form-group" id="sale-format-selector-group" style="display: none; margin-bottom: 16px;">
+                            <label for="sale-format-select">Formato de Venta</label>
+                            <select id="sale-format-select" required>
+                                <!-- Dynamic Options loaded via JS based on selected product formats -->
+                            </select>
+                        </div>
+
                         <div class="form-row">
                             <div class="form-group">
-                                <label for="sale-quantity">Cantidad Vendida</label>
+                                <label id="label-sale-quantity" for="sale-quantity">Cantidad Vendida</label>
                                 <input type="number" id="sale-quantity" min="1" placeholder="Ej: 12" required>
                             </div>
                             <div class="form-group">
-                                <label for="sale-unit-price">Precio Unitario Aplicado ($)</label>
+                                <label id="label-sale-price" for="sale-unit-price">Precio Unitario Aplicado ($)</label>
                                 <input type="number" id="sale-unit-price" min="0" placeholder="Ej: 400" required>
                             </div>
+                        </div>
+                        <div class="sale-equivalence-box" id="sale-equivalence-group" style="display: none;">
+                            <span id="sale-equivalence-helper" class="sale-equivalence-text"></span>
                         </div>
 
                         <div class="form-group">
