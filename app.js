@@ -9,7 +9,8 @@ const DEFAULT_STATE = {
         { id: "ing-2", name: "Tubos / Barquillos de Cuchuflí", category: "Ingrediente", unit: "un", price: 2000, size: 100 },
         { id: "ing-3", name: "Cobertura de Chocolate Negro (Sabor)", category: "Ingrediente", unit: "gr", price: 4500, size: 1000 },
         { id: "ing-4", name: "Bolsitas plásticas para Cuchuflí (100 un)", category: "Envoltura", unit: "un", price: 1200, size: 100 },
-        { id: "ing-5", name: "Cinta decorativa adhesiva / Amarras (100 un)", category: "Decoración", unit: "un", price: 800, size: 100 }
+        { id: "ing-5", name: "Cinta decorativa adhesiva / Amarras (100 un)", category: "Decoración", unit: "un", price: 800, size: 100 },
+        { id: "ing-6", name: "Galletas Oreo (Paquete 12 un)", category: "Ingrediente", unit: "un", price: 1200, size: 12 }
     ],
     recipes: [
         {
@@ -78,6 +79,19 @@ function initAppState() {
             if (!appState.ingredients || !appState.recipes || !appState.transactions) {
                 appState = JSON.parse(JSON.stringify(DEFAULT_STATE));
             } else {
+                // Ensure Oreo cookies ingredient exists for all users
+                const hasOreo = appState.ingredients.some(ing => ing.name.toLowerCase().includes("oreo"));
+                if (!hasOreo) {
+                    appState.ingredients.push({
+                        id: "ing-6",
+                        name: "Galletas Oreo (Paquete 12 un)",
+                        category: "Ingrediente",
+                        unit: "un",
+                        price: 1200,
+                        size: 12
+                    });
+                }
+                
                 // Ensure all loaded recipes have a formats list
                 appState.recipes.forEach(rec => {
                     if (!rec.formats) {
@@ -969,6 +983,37 @@ function loadRecipeToCalculator(id) {
     inputSelling.value = rec.sellingPrice;
 
     currentRecipeIngredients = JSON.parse(JSON.stringify(rec.ingredients));
+    
+    // Switch tabs in builder depending on if recipe is Oreo-based
+    const isOreoRecipe = rec.name.toLowerCase().includes("oreo");
+    const tabCuchufli = document.getElementById("recipe-tab-cuchufli");
+    const tabAlfajor = document.getElementById("recipe-tab-alfajor");
+    const wizardPanel = document.getElementById("oreo-wizard-panel");
+    const yieldLabel = document.getElementById("recipe-yield-label");
+
+    if (tabCuchufli && tabAlfajor && wizardPanel && yieldLabel) {
+        if (isOreoRecipe) {
+            tabAlfajor.classList.add("active");
+            tabCuchufli.classList.remove("active");
+            wizardPanel.style.display = "block";
+            yieldLabel.textContent = "Cantidad Total de Alfajores Producidos";
+            
+            // Auto-fill wizard inputs
+            const oreoPackages = document.getElementById("oreo-packages");
+            const oreoYield = document.getElementById("oreo-yield");
+            if (oreoPackages && oreoYield) {
+                oreoYield.value = rec.yield;
+                oreoPackages.value = (rec.yield / 6).toFixed(2);
+                setTimeout(updateOreoWizardSuggestions, 0);
+            }
+        } else {
+            tabCuchufli.classList.add("active");
+            tabAlfajor.classList.remove("active");
+            wizardPanel.style.display = "none";
+            yieldLabel.textContent = "Cantidad Total de Cuchuflís Producidos";
+        }
+    }
+
     updateRecipeBuilderOutput();
 
     // Scroll up to recipe editor
@@ -1515,12 +1560,182 @@ quickExpenseBtn.addEventListener("click", () => {
 });
 
 
+// 10.5 OREO ALFAJORES WIZARD & LOGIC
+function setupOreoWizard() {
+    const tabCuchufli = document.getElementById("recipe-tab-cuchufli");
+    const tabAlfajor = document.getElementById("recipe-tab-alfajor");
+    const wizardPanel = document.getElementById("oreo-wizard-panel");
+    const yieldLabel = document.getElementById("recipe-yield-label");
+    const recipeNameInput = document.getElementById("recipe-name");
+    const recipeYieldInput = document.getElementById("recipe-yield");
+
+    if (!tabCuchufli || !tabAlfajor) return;
+
+    tabCuchufli.addEventListener("click", () => {
+        tabCuchufli.classList.add("active");
+        tabAlfajor.classList.remove("active");
+        if (wizardPanel) wizardPanel.style.display = "none";
+        if (yieldLabel) yieldLabel.textContent = "Cantidad Total de Cuchuflís Producidos";
+    });
+
+    tabAlfajor.addEventListener("click", () => {
+        tabAlfajor.classList.add("active");
+        tabCuchufli.classList.remove("active");
+        if (wizardPanel) wizardPanel.style.display = "block";
+        if (yieldLabel) yieldLabel.textContent = "Cantidad Total de Alfajores Producidos";
+        if (recipeNameInput && !recipeNameInput.value.trim()) {
+            recipeNameInput.value = "Alfajores Oreo";
+        }
+        updateOreoWizardSuggestions();
+    });
+
+    // Wizard inputs: packages and yield synchronization
+    const oreoPackages = document.getElementById("oreo-packages");
+    const oreoYield = document.getElementById("oreo-yield");
+    const oreoManjar = document.getElementById("oreo-manjar-ratio");
+    const oreoChocolate = document.getElementById("oreo-chocolate-ratio");
+
+    if (oreoPackages && oreoYield) {
+        oreoPackages.addEventListener("input", (e) => {
+            const pkgs = parseFloat(e.target.value) || 0;
+            oreoYield.value = Math.round(pkgs * 6);
+            updateOreoWizardSuggestions();
+        });
+
+        oreoYield.addEventListener("input", (e) => {
+            const yld = parseFloat(e.target.value) || 0;
+            oreoPackages.value = (yld / 6).toFixed(2);
+            updateOreoWizardSuggestions();
+        });
+    }
+
+    if (oreoManjar) oreoManjar.addEventListener("input", updateOreoWizardSuggestions);
+    if (oreoChocolate) oreoChocolate.addEventListener("input", updateOreoWizardSuggestions);
+
+    // Apply wizard button
+    const btnApply = document.getElementById("btn-apply-oreo-wizard");
+    if (btnApply) {
+        btnApply.addEventListener("click", applyOreoWizard);
+    }
+}
+
+function updateOreoWizardSuggestions() {
+    const yieldEl = document.getElementById("oreo-yield");
+    const manjarEl = document.getElementById("oreo-manjar-ratio");
+    const chocolateEl = document.getElementById("oreo-chocolate-ratio");
+    const reqCookiesEl = document.getElementById("oreo-req-cookies");
+    const reqPackagesEl = document.getElementById("oreo-req-packages");
+    const reqManjarEl = document.getElementById("oreo-req-manjar");
+    const reqChocolateEl = document.getElementById("oreo-req-chocolate");
+
+    if (!yieldEl || !manjarEl || !chocolateEl) return;
+
+    const yld = parseInt(yieldEl.value) || 0;
+    const manjarPerU = parseFloat(manjarEl.value) || 0;
+    const chocolatePerU = parseFloat(chocolateEl.value) || 0;
+
+    const reqCookies = yld * 2;
+    const reqPackages = (yld / 6).toFixed(1);
+    const reqManjar = yld * manjarPerU;
+    const reqChocolate = yld * chocolatePerU;
+
+    if (reqCookiesEl) reqCookiesEl.textContent = reqCookies;
+    if (reqPackagesEl) reqPackagesEl.textContent = reqPackages;
+    if (reqManjarEl) reqManjarEl.textContent = `${reqManjar}g`;
+    if (reqChocolateEl) reqChocolateEl.textContent = `${reqChocolate}g`;
+}
+
+function applyOreoWizard() {
+    const yieldEl = document.getElementById("oreo-yield");
+    const manjarEl = document.getElementById("oreo-manjar-ratio");
+    const chocolateEl = document.getElementById("oreo-chocolate-ratio");
+
+    if (!yieldEl || !manjarEl || !chocolateEl) return;
+
+    const yld = parseInt(yieldEl.value);
+    const manjarPerU = parseFloat(manjarEl.value);
+    const chocolatePerU = parseFloat(chocolateEl.value);
+
+    if (isNaN(yld) || yld <= 0) {
+        alert("Por favor ingresa una cantidad válida de alfajores a producir.");
+        return;
+    }
+    if (isNaN(manjarPerU) || manjarPerU < 0 || isNaN(chocolatePerU) || chocolatePerU < 0) {
+        alert("Por favor ingresa cantidades válidas de manjar y chocolate.");
+        return;
+    }
+
+    // 1. Find or create Oreo cookies ingredient
+    let oreoIng = appState.ingredients.find(ing => ing.name.toLowerCase().includes("oreo"));
+    if (!oreoIng) {
+        // Create it
+        oreoIng = {
+            id: `ing-${Date.now()}`,
+            name: "Galletas Oreo (Paquete 12 un)",
+            category: "Ingrediente",
+            unit: "un",
+            price: 1200,
+            size: 12
+        };
+        appState.ingredients.push(oreoIng);
+        saveState();
+        renderInventory();
+    }
+
+    // 2. Find manjar ingredient
+    let manjarIng = appState.ingredients.find(ing => ing.name.toLowerCase().includes("manjar"));
+    if (!manjarIng) {
+        manjarIng = appState.ingredients.find(ing => ing.id === "ing-1") || appState.ingredients[0];
+    }
+
+    // 3. Find chocolate ingredient
+    let chocolateIng = appState.ingredients.find(ing => ing.name.toLowerCase().includes("chocolate") || ing.name.toLowerCase().includes("cobertura"));
+    if (!chocolateIng) {
+        chocolateIng = appState.ingredients.find(ing => ing.id === "ing-3") || appState.ingredients[0];
+    }
+
+    // 4. Update currentRecipeIngredients
+    currentRecipeIngredients = [];
+
+    // Oreo Cookies (2 cookies per alfajor)
+    currentRecipeIngredients.push({
+        id: oreoIng.id,
+        quantity: yld * 2
+    });
+
+    // Manjar
+    if (manjarIng && manjarPerU > 0) {
+        currentRecipeIngredients.push({
+            id: manjarIng.id,
+            quantity: yld * manjarPerU
+        });
+    }
+
+    // Chocolate
+    if (chocolateIng && chocolatePerU > 0) {
+        currentRecipeIngredients.push({
+            id: chocolateIng.id,
+            quantity: yld * chocolatePerU
+        });
+    }
+
+    // Set batch yield and name in form
+    document.getElementById("recipe-yield").value = yld;
+    document.getElementById("recipe-name").value = `Alfajores Oreo (Lote ${yld} un)`;
+
+    // Recalculate
+    updateRecipeBuilderOutput();
+
+    alert(`¡Receta generada con éxito para ${yld} alfajores! Se añadieron las galletas, manjar y chocolate al lote. Puedes agregar empaques u otros ingredientes manualmente.`);
+}
+
 // 11. GLOBAL INITIALIZATION
 window.addEventListener("DOMContentLoaded", () => {
     initAppState();
     setupTheme();
     setupTabs();
     resetTransactionDates();
+    setupOreoWizard();
 
     // Render initially active tab (dashboard)
     renderDashboard();

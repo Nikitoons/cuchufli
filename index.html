@@ -289,6 +289,57 @@
                 <!-- Recipe Builder -->
                 <div class="card builder-card">
                     <h3>Armar Lote de Producción</h3>
+                    
+                    <!-- Product Type Tabs -->
+                    <div class="form-tabs" style="margin-bottom: 20px;">
+                        <button class="form-tab-btn active" id="recipe-tab-cuchufli" type="button">Cuchuflís</button>
+                        <button class="form-tab-btn" id="recipe-tab-alfajor" type="button">Alfajores Oreo 🍪</button>
+                    </div>
+
+                    <!-- Oreo Alfajores Assistant Panel -->
+                    <div id="oreo-wizard-panel" style="display: none; margin-bottom: 24px; padding: 16px; background-color: var(--primary-glow); border-radius: var(--radius-sm); border: 1.5px dashed var(--primary);">
+                        <h4 style="margin-bottom: 8px; color: var(--primary); display: flex; align-items: center; gap: 8px; font-size: 1rem;">
+                            🍪 Asistente de Alfajores Oreo
+                        </h4>
+                        <p class="help-text" style="margin-bottom: 16px; font-size: 0.82rem; color: var(--text-muted); line-height: 1.4;">
+                            Ingresa la cantidad de paquetes o de alfajores. El sistema calculará automáticamente las galletas (2 por alfajor), manjar y chocolate necesarios para tu lote.
+                        </p>
+                        
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="oreo-packages" style="font-size: 0.85rem; font-weight: 600; color: var(--text-main);">Paquetes Oreo a usar (12 un c/u)</label>
+                                <input type="number" id="oreo-packages" min="0.1" step="any" placeholder="Ej: 4" style="background: var(--bg-card); color: var(--text-main); border: 1px solid var(--border-color); border-radius: 4px; padding: 8px; width: 100%;">
+                            </div>
+                            <div class="form-group">
+                                <label for="oreo-yield" style="font-size: 0.85rem; font-weight: 600; color: var(--text-main);">Alfajores a Producir</label>
+                                <input type="number" id="oreo-yield" min="1" placeholder="Ej: 24" style="background: var(--bg-card); color: var(--text-main); border: 1px solid var(--border-color); border-radius: 4px; padding: 8px; width: 100%;">
+                            </div>
+                        </div>
+
+                        <div class="form-row" style="margin-top: 10px;">
+                            <div class="form-group">
+                                <label for="oreo-manjar-ratio" style="font-size: 0.85rem; font-weight: 600; color: var(--text-main);">Relleno Manjar / U (gr)</label>
+                                <input type="number" id="oreo-manjar-ratio" min="1" value="15" style="background: var(--bg-card); color: var(--text-main); border: 1px solid var(--border-color); border-radius: 4px; padding: 8px; width: 100%;">
+                            </div>
+                            <div class="form-group">
+                                <label for="oreo-chocolate-ratio" style="font-size: 0.85rem; font-weight: 600; color: var(--text-main);">Cobertura Chocolate / U (gr)</label>
+                                <input type="number" id="oreo-chocolate-ratio" min="1" value="10" style="background: var(--bg-card); color: var(--text-main); border: 1px solid var(--border-color); border-radius: 4px; padding: 8px; width: 100%;">
+                            </div>
+                        </div>
+
+                        <div style="margin-top: 16px; display: flex; flex-direction: column; gap: 10px;">
+                            <div id="oreo-wizard-suggestions" style="font-size: 0.82rem; line-height: 1.5; color: var(--text-main); background: var(--bg-card); padding: 10px; border-radius: var(--radius-sm); border: 1px solid var(--border-color);">
+                                Requerimiento estimado: <strong id="oreo-req-cookies">0</strong> galletas Oreo (<strong id="oreo-req-packages">0</strong> paq.), <strong id="oreo-req-manjar">0g</strong> de manjar y <strong id="oreo-req-chocolate">0g</strong> de chocolate.
+                            </div>
+                            <button type="button" class="btn btn-primary btn-icon-text w-full" id="btn-apply-oreo-wizard">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                                    <polyline points="20 6 9 17 4 12"></polyline>
+                                </svg>
+                                Generar Receta e Insumos
+                            </button>
+                        </div>
+                    </div>
+
                     <form id="recipe-info-form">
                         <div class="form-row">
                             <div class="form-group" style="grid-column: span 2;">
@@ -298,7 +349,7 @@
                         </div>
                         <div class="form-row">
                             <div class="form-group" style="grid-column: span 2;">
-                                <label for="recipe-yield">Cantidad Total de Cuchuflís Producidos</label>
+                                <label id="recipe-yield-label" for="recipe-yield">Cantidad Total de Cuchuflís Producidos</label>
                                 <input type="number" id="recipe-yield" min="1" value="120" required>
                             </div>
                         </div>
